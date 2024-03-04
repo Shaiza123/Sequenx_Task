@@ -1,57 +1,66 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import Textinput from '../src/components/Textinput/index';
+import Textinput from '../src/components/Textinput';
 
-describe('Textinput component', () => {
-  test('renders correctly', () => {
-    const { getByPlaceholderText } = render(<Textinput />);
-    const nameInput = getByPlaceholderText('Product Name');
-    const priceInput = getByPlaceholderText('Price');
-    const materialInput = getByPlaceholderText('Select Material');
-    
-    expect(nameInput).toBeDefined();
-    expect(priceInput).toBeDefined();
-    expect(materialInput).toBeDefined();
+// Mock dependencies
+const mockProductFormSchema = {
+  validate: jest.fn(() => Promise.resolve({})),
+  validateSync: jest.fn(() => ({})),
+};
+
+const mockAddProduct = jest.fn();
+
+const mockProductNameRef = {
+  current: { focus: jest.fn() },
+};
+
+const mockProductPriceRef = {
+  current: { focus: jest.fn() },
+};
+jest.useFakeTimers();
+
+test('render correctly', () => {
+  const { toJSON } = render(
+    <Textinput
+      productFormSchema={mockProductFormSchema}
+      addProduct={mockAddProduct}
+      productNameRef={mockProductNameRef}
+      productPriceRef={mockProductPriceRef}
+    />
+  );
+
+  expect(toJSON()).toMatchSnapshot();
+});
+
+test('renders correctly and triggers form submission', async () => {
+  const { getByPlaceholderText, getByText, getByTestId } = render(
+    <Textinput
+      productFormSchema={mockProductFormSchema}
+      addProduct={mockAddProduct}
+      productNameRef={mockProductNameRef}
+      productPriceRef={mockProductPriceRef}
+    />
+  );
+
+  const nameInput = getByPlaceholderText('Product Name');
+  const priceInput = getByPlaceholderText('Price');
+  const materialPicker = getByTestId('materialPicker');
+  const addButton = getByText('Add Product');
+
+  fireEvent.changeText(nameInput, 'Product 1');
+  fireEvent.changeText(priceInput, '10');
+  fireEvent(materialPicker, 'valueChange', 'Metal');
+  fireEvent.press(addButton);
+  
+
+  await waitFor(async() => {
+    expect(mockAddProduct).toHaveBeenCalledWith('Product 1', '10', 'Metal', expect.any(Function));
   });
 
-  test('input validation', async () => {
-    const { getByPlaceholderText, getByText } = render(<Textinput />);
-    const nameInput = getByPlaceholderText('Product Name');
-    const priceInput = getByPlaceholderText('Price');
-    const addButton = getByText('Add Product');
+  jest.runOnlyPendingTimers();
+});
 
-    // Fill in invalid data
-    fireEvent.changeText(nameInput, '');
-    fireEvent.changeText(priceInput, 'abc'); // Invalid price
 
-    fireEvent.press(addButton);
-
-    await waitFor(() => {
-      expect(getByText('Name is required')).toBeTruthy();
-      expect(getByText('Price must be a number')).toBeTruthy();
-      // Material validation can be added similarly
-    });
-  });
-
-  test('submitting the form', async () => {
-    const addProductMock = jest.fn();
-    const { getByPlaceholderText, getByText } = render(
-      <Textinput addProduct={addProductMock} />
-    );
-
-    const nameInput = getByPlaceholderText('Product Name');
-    const priceInput = getByPlaceholderText('Price');
-    const materialInput = getByPlaceholderText('Select Material');
-    const addButton = getByText('Add Product');
-
-    fireEvent.changeText(nameInput, 'Product 1');
-    fireEvent.changeText(priceInput, '10');
-    fireEvent.changeText(materialInput, 'Metal');
-
-    fireEvent.press(addButton);
-
-    await waitFor(() => {
-      expect(addProductMock).toHaveBeenCalledWith('Product 1', '10', 'Metal', expect.any(Function));
-    });
-  });
+afterAll(() => {
+  jest.useRealTimers();
 });

@@ -58,6 +58,7 @@ const Textinput = (props) => {
                         />
                         {touched.price && errors.price && <Text style={styles.errorText}>{errors.price}</Text>}
                         <Picker
+                            testID="materialPicker"
                             selectedValue={values.material}
                             style={styles.picker}
                             onValueChange={(itemValue) =>
