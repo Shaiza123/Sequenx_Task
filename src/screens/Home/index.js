@@ -17,7 +17,6 @@ const Home = (props) => {
     const fetchData = async () => {
       try {
         const res = await axios.get('https://65e2be4288c4088649f4c34b.mockapi.io/productDetail');
-        console.log(res.data)
         const responseData = res.data
         setProductDetail(responseData);
         setLoading(false)
